@@ -1,0 +1,59 @@
+{
+  "family": "ai-enterprise-ecs-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::012345678912:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::012345678912:role/aiEnterpriseAppRole",
+  "containerDefinitions": [
+    {
+      "name": "ai-backend",
+      "image": "012345678912.dkr.ecr.us-east-1.amazonaws.com/ai-ts-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "hostPort": 5000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "5000" },
+        { "name": "CLOUD_PROVIDER", "value": "aws" },
+        { "name": "AWS_REGION", "value": "us-east-1" },
+        { "name": "FRONTEND_URL", "value": "https://app.enterprise-ai.internal" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:012345678912:secret:ai-enterprise-rds-db-url"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:012345678912:secret:ai-enterprise-redis-url"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:012345678912:secret:ai-enterprise-jwt-secret"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-enterprise-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "node -e 'fetch(\"http://localhost:5000/api/admin/health\").then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))'"],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}

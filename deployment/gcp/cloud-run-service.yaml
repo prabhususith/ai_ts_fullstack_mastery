@@ -1,0 +1,66 @@
+# ==============================================================================
+# Google Cloud Platform (GCP) Cloud Run Service Spec
+# ==============================================================================
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ai-enterprise-backend
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "2"
+        autoscaling.knative.dev/maxScale: "20"
+        run.googleapis.com/cloudsql-instances: my-project:us-central1:ai-enterprise-db
+        run.googleapis.com/vpc-access-connector: projects/my-project/locations/us-central1/connectors/vpc-connector
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - image: us-central1-docker.pkg.dev/my-project/ai-repo/backend:latest
+          resources:
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "5000"
+            - name: CLOUD_PROVIDER
+              value: "gcp"
+            - name: GCP_REGION
+              value: "us-central1"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: ai-db-connection-string
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: ai-redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: ai-jwt-secret
+          startupProbe:
+            httpGet:
+              path: /api/admin/health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/admin/health
+              port: 5000
+            periodSeconds: 15

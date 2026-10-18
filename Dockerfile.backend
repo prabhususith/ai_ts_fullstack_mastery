@@ -1,0 +1,68 @@
+# ==============================================================================
+# Enterprise Multi-Stage Dockerfile (Backend - Node.js 20+ Express TypeScript)
+# Target: Production-hardened container with non-root security context
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Stage 1: Build & Compilation
+# ------------------------------------------------------------------------------
+FROM node:20-alpine AS builder
+
+WORKDIR /usr/src/app
+
+# Install build essentials for Alpine
+RUN apk add --no-cache libc6-compat
+
+# Copy dependency manifests
+COPY backend/package*.json backend/tsconfig.json ./
+
+# Install all dependencies (including devDependencies for build)
+RUN npm install
+
+# Copy backend TypeScript source
+COPY backend/src/ ./src/
+
+# Compile TypeScript to production JavaScript bundle
+RUN npm run build
+
+# Prune development dependencies to keep final footprint minimal
+RUN npm prune --omit=dev
+
+# ------------------------------------------------------------------------------
+# Stage 2: Production Minimal Runner
+# ------------------------------------------------------------------------------
+FROM node:20-alpine AS runner
+
+WORKDIR /usr/src/app
+
+# Security: Set production environment
+ENV NODE_ENV=production
+ENV PORT=4000
+
+# Install curl for healthcheck validation
+RUN apk add --no-cache curl
+
+# Security: Create non-root user & group if not standard, or utilize node:node
+# node:20-alpine comes with 'node' (uid: 1000, gid: 1000)
+# Ensure application directory is owned by node
+RUN chown -R node:node /usr/src/app
+
+# Copy production node_modules from builder
+COPY --chown=node:node --from=builder /usr/src/app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /usr/src/app/package.json ./package.json
+
+# Copy compiled JavaScript output
+COPY --chown=node:node --from=builder /usr/src/app/dist ./dist
+
+# Security: Drop root privileges
+USER node
+
+# Expose backend service port
+EXPOSE 4000
+
+# Container Healthcheck (every 30s, 5s timeout, 3 retries)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:4000/api/health || exit 1
+
+# Process execution using dumb-init/direct node execution
+CMD ["node", "dist/server.js"]

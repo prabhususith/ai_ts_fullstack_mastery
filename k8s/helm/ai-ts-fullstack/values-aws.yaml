@@ -1,0 +1,50 @@
+# ==============================================================================
+# AWS EKS Overrides for Helm Chart
+# ==============================================================================
+
+global:
+  environment: production
+  cloudProvider: aws
+
+backend:
+  replicaCount: 3
+  image:
+    repository: 012345678912.dkr.ecr.us-east-1.amazonaws.com/ai-ts-backend
+    tag: v1.0.0
+    pullPolicy: Always
+
+frontend:
+  replicaCount: 3
+  image:
+    repository: 012345678912.dkr.ecr.us-east-1.amazonaws.com/ai-ts-frontend
+    tag: v1.0.0
+    pullPolicy: Always
+
+postgres:
+  enabled: false # Use AWS RDS for PostgreSQL with pgvector extension enabled
+
+redis:
+  enabled: false # Use AWS ElastiCache for Redis (cluster mode enabled)
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: ai-enterprise-alb
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+  hosts:
+    - host: ai.aws.enterprise.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /ws
+          pathType: Prefix
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend

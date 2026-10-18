@@ -1,0 +1,23 @@
+# ==============================================================================
+# Development Container Dockerfile (Backend - Hot-Reloading with tsx)
+# ==============================================================================
+FROM node:20-alpine
+
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache libc6-compat curl
+
+# Copy package manifests
+COPY backend/package*.json backend/tsconfig.json ./
+
+# Install dependencies (including devDependencies for tsx and vitest)
+RUN npm install
+
+# Expose backend API and debugger port
+EXPOSE 4000 9229
+
+ENV NODE_ENV=development
+ENV PORT=4000
+
+# Run in development mode with tsx watching source changes mounted via volume
+CMD ["npx", "tsx", "watch", "src/server.ts"]

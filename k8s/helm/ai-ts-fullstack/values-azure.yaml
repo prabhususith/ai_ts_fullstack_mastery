@@ -1,0 +1,47 @@
+# ==============================================================================
+# Azure AKS Overrides for Helm Chart
+# ==============================================================================
+
+global:
+  environment: production
+  cloudProvider: azure
+
+backend:
+  replicaCount: 3
+  image:
+    repository: aitsenterprise.azurecr.io/backend
+    tag: v1.0.0
+    pullPolicy: Always
+
+frontend:
+  replicaCount: 3
+  image:
+    repository: aitsenterprise.azurecr.io/frontend
+    tag: v1.0.0
+    pullPolicy: Always
+
+postgres:
+  enabled: false # Use Azure Database for PostgreSQL Flexible Server with pgvector
+
+redis:
+  enabled: false # Use Azure Cache for Redis (Premium)
+
+ingress:
+  enabled: true
+  className: azure/application-gateway
+  annotations:
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/health-probe-path: "/healthz"
+    appgw.ingress.kubernetes.io/cookie-based-affinity: "true"
+  hosts:
+    - host: ai.azure.enterprise.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /ws
+          pathType: Prefix
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend

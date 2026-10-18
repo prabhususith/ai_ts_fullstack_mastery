@@ -1,0 +1,18 @@
+apiVersion: v2
+name: ai-ts-fullstack
+description: Enterprise Full-Stack AI Ecosystem Helm Chart (React, Express, pgvector, Redis)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - ai
+  - typescript
+  - react
+  - express
+  - pgvector
+  - redis
+  - mcp
+home: https://github.com/enterprise/ai-ts-fullstack-mastery
+maintainers:
+  - name: Google Antigravity Systems Architect
+    email: architect@antigravity.ai

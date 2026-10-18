@@ -1,0 +1,63 @@
+# ==============================================================================
+# Azure Container Apps (ACA) Enterprise Deployment Spec
+# ==============================================================================
+apiVersion: 2023-05-01
+kind: ContainerApp
+metadata:
+  name: ai-enterprise-backend
+  location: eastus
+spec:
+  environmentId: /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-ai-enterprise/providers/Microsoft.App/managedEnvironments/ai-enterprise-env
+  configuration:
+    ingress:
+      external: true
+      targetPort: 5000
+      transport: auto
+      allowInsecure: false
+    secrets:
+      - name: db-connection-string
+        keyVaultUrl: https://kv-ai-enterprise.vault.azure.net/secrets/database-url
+        identity: system
+      - name: redis-connection-string
+        keyVaultUrl: https://kv-ai-enterprise.vault.azure.net/secrets/redis-url
+        identity: system
+      - name: jwt-secret
+        keyVaultUrl: https://kv-ai-enterprise.vault.azure.net/secrets/jwt-secret
+        identity: system
+  template:
+    containers:
+      - name: backend
+        image: aitsenterprise.azurecr.io/backend:latest
+        resources:
+          cpu: 1.0
+          memory: 2.0Gi
+        env:
+          - name: NODE_ENV
+            value: production
+          - name: PORT
+            value: "5000"
+          - name: CLOUD_PROVIDER
+            value: azure
+          - name: AZURE_LOCATION
+            value: eastus
+          - name: DATABASE_URL
+            secretRef: db-connection-string
+          - name: REDIS_URL
+            secretRef: redis-connection-string
+          - name: JWT_SECRET
+            secretRef: jwt-secret
+        probes:
+          - type: Liveness
+            httpGet:
+              path: /api/admin/health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+    scale:
+      minReplicas: 2
+      maxReplicas: 10
+      rules:
+        - name: http-scaling-rule
+          http:
+            metadata:
+              concurrentRequests: "50"

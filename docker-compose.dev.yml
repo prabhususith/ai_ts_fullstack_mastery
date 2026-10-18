@@ -1,0 +1,114 @@
+version: '3.8'
+
+# ==============================================================================
+# Development Orchestration Stack with Live Hot-Reloading (Docker Compose)
+# Services: Hot-reloading Backend (tsx), Hot-reloading Frontend (Vite), pgvector, Redis
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL with pgvector extension (ankane/pgvector:latest)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: ai_pgvector_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: ai_enterprise_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+      - ./backend/src/db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_enterprise_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai_dev_net
+
+  # ----------------------------------------------------------------------------
+  # Redis 7 Alpine
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ai_redis_cache_dev
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ai_dev_net
+
+  # ----------------------------------------------------------------------------
+  # Backend with Live tsx Watch Mount
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.backend
+    container_name: ai_backend_dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/ai_enterprise_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-super-secret-jwt-key-with-minimum-32-characters-entropy-999
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "4000:4000"
+      - "9229:9229"
+    volumes:
+      - ./backend/src:/usr/src/app/src:ro
+      - ./backend/package.json:/usr/src/app/package.json:ro
+      - ./backend/tsconfig.json:/usr/src/app/tsconfig.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai_dev_net
+
+  # ----------------------------------------------------------------------------
+  # Frontend with Vite Hot Module Replacement (HMR) Mount
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.frontend
+    container_name: ai_frontend_dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      VITE_API_BASE_URL: http://localhost:4000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/usr/src/app/src
+      - ./frontend/index.html:/usr/src/app/index.html
+      - ./frontend/vite.config.ts:/usr/src/app/vite.config.ts
+      - ./frontend/tailwind.config.js:/usr/src/app/tailwind.config.js
+    depends_on:
+      - backend
+    networks:
+      - ai_dev_net
+
+volumes:
+  pgdata_dev:
+  redisdata_dev:
+
+networks:
+  ai_dev_net:
+    driver: bridge

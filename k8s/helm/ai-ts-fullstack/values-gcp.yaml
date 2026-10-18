@@ -1,0 +1,46 @@
+# ==============================================================================
+# GCP GKE Overrides for Helm Chart
+# ==============================================================================
+
+global:
+  environment: production
+  cloudProvider: gcp
+
+backend:
+  replicaCount: 3
+  image:
+    repository: us-central1-docker.pkg.dev/my-project/ai-repo/backend
+    tag: v1.0.0
+    pullPolicy: Always
+
+frontend:
+  replicaCount: 3
+  image:
+    repository: us-central1-docker.pkg.dev/my-project/ai-repo/frontend
+    tag: v1.0.0
+    pullPolicy: Always
+
+postgres:
+  enabled: false # Use GCP Cloud SQL for PostgreSQL 16 (cloudsql.enable_pgvector)
+
+redis:
+  enabled: false # Use GCP Memorystore for Redis
+
+ingress:
+  enabled: true
+  className: gce
+  annotations:
+    networking.gke.io/managed-certificates: "ai-enterprise-cert"
+    networking.gke.io/v1beta1.FrontendConfig: "ai-frontend-config"
+  hosts:
+    - host: ai.gcp.enterprise.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /ws
+          pathType: Prefix
+          service: backend
+        - path: /*
+          pathType: ImplementationSpecific
+          service: frontend

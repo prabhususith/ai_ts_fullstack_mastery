@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ai-enterprise
+
+resources:
+  - ../base
+  - storageclass-aws.yaml
+  - ingress-alb-aws.yaml
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: ai-enterprise-config
+    patch: |-
+      - op: replace
+        path: /data/CLOUD_PROVIDER
+        value: "aws"

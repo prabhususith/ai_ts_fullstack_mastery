@@ -1,0 +1,37 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-ts-fullstack.fullname" . }}-postgres
+  labels:
+    {{- include "ai-ts-fullstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "ai-ts-fullstack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+  ports:
+    - name: postgres
+      port: {{ .Values.postgres.port }}
+      targetPort: {{ .Values.postgres.port }}
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-ts-fullstack.fullname" . }}-postgres-headless
+  labels:
+    {{- include "ai-ts-fullstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-headless
+spec:
+  clusterIP: None
+  selector:
+    {{- include "ai-ts-fullstack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+  ports:
+    - name: postgres
+      port: {{ .Values.postgres.port }}
+      targetPort: {{ .Values.postgres.port }}
+      protocol: TCP
+{{- end }}

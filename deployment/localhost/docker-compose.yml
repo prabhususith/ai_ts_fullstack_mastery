@@ -1,0 +1,89 @@
+version: '3.8'
+
+# ==============================================================================
+# Enterprise Localhost Deployment Manifest
+# PostgreSQL 16 + pgvector, Redis 7 Alpine, Node Backend, React Frontend
+# ==============================================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: local_postgres_pgvector
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: ai_enterprise_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - local_pgdata:/var/lib/postgresql/data
+      - ../../backend/src/db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_enterprise_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - enterprise_mesh
+
+  redis:
+    image: redis:7-alpine
+    container_name: local_redis_semantic
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", ""]
+    ports:
+      - "6379:6379"
+    volumes:
+      - local_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - enterprise_mesh
+
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: local_ai_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/ai_enterprise_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super-secret-jwt-key-with-minimum-32-characters-entropy-999
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - enterprise_mesh
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: local_ai_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - enterprise_mesh
+
+volumes:
+  local_pgdata:
+  local_redisdata:
+
+networks:
+  enterprise_mesh:
+    driver: bridge

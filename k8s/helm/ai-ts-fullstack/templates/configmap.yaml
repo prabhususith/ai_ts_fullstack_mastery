@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ai-ts-fullstack.fullname" . }}-config
+  labels:
+    {{- include "ai-ts-fullstack.labels" . | nindent 4 }}
+data:
+  NODE_ENV: {{ .Values.global.environment | quote }}
+  PORT: {{ .Values.backend.port | quote }}
+  FRONTEND_URL: "http://{{ include "ai-ts-fullstack.fullname" . }}-frontend:{{ .Values.frontend.port }}"
+  LOG_LEVEL: "info"
+  DB_HOST: "{{ include "ai-ts-fullstack.fullname" . }}-postgres"
+  DB_PORT: "{{ .Values.postgres.port }}"
+  DB_NAME: "{{ .Values.postgres.dbName }}"
+  REDIS_HOST: "{{ include "ai-ts-fullstack.fullname" . }}-redis"
+  REDIS_PORT: "{{ .Values.redis.port }}"
+  CLOUD_PROVIDER: {{ .Values.global.cloudProvider | quote }}
+  SEMANTIC_CACHE_SIMILARITY_THRESHOLD: "0.92"
