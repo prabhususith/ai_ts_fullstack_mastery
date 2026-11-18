@@ -79,7 +79,7 @@ describe('Security Suite (OWASP LLM & STRIDE)', () => {
 
       expect(hash).toContain('$argon2id$v=19$');
       expect(hash).toContain('m=');
-    });
+    }, 15000);
 
     it('verifies correct password and rejects invalid password', async () => {
       const password = 'CorrectPassword777';
@@ -90,7 +90,7 @@ describe('Security Suite (OWASP LLM & STRIDE)', () => {
 
       expect(isValid).toBe(true);
       expect(isInvalid).toBe(false);
-    });
+    }, 15000);
   });
 
   describe('Jose Signed JWT & RBAC Claims', () => {

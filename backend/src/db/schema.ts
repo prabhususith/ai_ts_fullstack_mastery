@@ -103,6 +103,70 @@ export const chatMessages = pgTable('chat_messages', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+/**
+ * Multimodal Items table storing image, document, and cross-modal embeddings with HNSW indexing.
+ */
+export const multimodalItems = pgTable('multimodal_items', {
+  id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  title: text('title').notNull(),
+  description: text('description'),
+  mediaType: varchar('media_type', { length: 50 }).notNull().default('image'),
+  mediaUrl: text('media_url'),
+  thumbnailBase64: text('thumbnail_base64'),
+  embedding: vector384('embedding').notNull(),
+  metadata: jsonb('metadata').default('{}').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Human-in-the-Loop (HITL) annotations for RLHF/DPO preference alignment.
+ */
+export const humanFeedbackAnnotations = pgTable('human_feedback_annotations', {
+  id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  prompt: text('prompt').notNull(),
+  chosenResponse: text('chosen_response').notNull(),
+  rejectedResponse: text('rejected_response').notNull(),
+  rating: integer('rating').notNull().default(5),
+  hallucinationFlag: varchar('hallucination_flag', { length: 10 }).notNull().default('false'),
+  severity: varchar('severity', { length: 50 }).default('NONE'),
+  rationale: text('rationale'),
+  evaluatorId: varchar('evaluator_id', { length: 100 }).notNull().default('expert_annotator'),
+  metadata: jsonb('metadata').default('{}').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * AI Benchmark regression runs and quality gate tracking.
+ */
+export const evalBenchmarkRuns = pgTable('eval_benchmark_runs', {
+  id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  suiteName: varchar('suite_name', { length: 100 }).notNull(),
+  modelA: varchar('model_a', { length: 100 }).notNull(),
+  modelB: varchar('model_b', { length: 100 }),
+  accuracyScore: text('accuracy_score').notNull(),
+  groundednessScore: text('groundedness_score').notNull(),
+  avgLatencyMs: integer('avg_latency_ms').notNull(),
+  costPer1k: text('cost_per_1k').notNull(),
+  verdict: varchar('verdict', { length: 20 }).notNull().default('PASSED'),
+  metricsBreakdown: jsonb('metrics_breakdown').default('{}').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * AI Governance and EU AI Act / ISO 42001 compliance audit reports.
+ */
+export const governanceAudits = pgTable('governance_audits', {
+  id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  systemName: varchar('system_name', { length: 100 }).notNull(),
+  riskTier: varchar('risk_tier', { length: 50 }).notNull(),
+  complianceScore: integer('compliance_score').notNull(),
+  transparencyPassed: varchar('transparency_passed', { length: 10 }).notNull().default('true'),
+  humanOversightPassed: varchar('human_oversight_passed', { length: 10 }).notNull().default('true'),
+  dataGovernancePassed: varchar('data_governance_passed', { length: 10 }).notNull().default('true'),
+  auditReport: jsonb('audit_report').default('{}').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Document = typeof documents.$inferSelect;
@@ -112,3 +176,7 @@ export type NewEmbedding = typeof embeddings.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type ChatSession = typeof chatSessions.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+export type MultimodalItem = typeof multimodalItems.$inferSelect;
+export type HumanFeedbackAnnotation = typeof humanFeedbackAnnotations.$inferSelect;
+export type EvalBenchmarkRun = typeof evalBenchmarkRuns.$inferSelect;
+export type GovernanceAudit = typeof governanceAudits.$inferSelect;

@@ -16,6 +16,10 @@ import ragRoutes from './api/routes/ragRoutes';
 import mcpRoutes from './api/routes/mcpRoutes';
 import agentRoutes from './api/routes/agentRoutes';
 import adminRoutes from './api/routes/adminRoutes';
+import multimodalRoutes from './api/routes/multimodalRoutes';
+import alignmentRoutes from './api/routes/alignmentRoutes';
+import evalsRoutes from './api/routes/evalsRoutes';
+import governanceRoutes from './api/routes/governanceRoutes';
 
 export function createApp(): Application {
   const app = express();
@@ -66,6 +70,10 @@ export function createApp(): Application {
   app.use('/api/mcp', mcpRoutes);
   app.use('/api/agents', agentRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/multimodal', multimodalRoutes);
+  app.use('/api/alignment', alignmentRoutes);
+  app.use('/api/evals', evalsRoutes);
+  app.use('/api/governance', governanceRoutes);
 
   // Health alias for K8s probes and container healthchecks
   app.get('/api/health', (_req: Request, res: Response) => {
