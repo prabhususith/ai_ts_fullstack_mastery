@@ -40,6 +40,7 @@ graph TD
 | **[07](file:///p:/prabhu/projects/ai_ts_fullstack_mastery/docs/07_multi_cloud_deployment_guide.md)** | **Multi-Cloud Deployment Manual** | Infrastructure-as-Code for Localhost, AWS (ECS/RDS), Azure (ACA), and GCP (Cloud Run). |
 | **[08](file:///p:/prabhu/projects/ai_ts_fullstack_mastery/docs/08_glossary_and_cheat_sheets.md)** | **Glossary, Formulas & Cheat Sheets** | Mathematical formulas, NPM catalogs, CLI cheat sheets, and algorithmic proofs. |
 | **[09](file:///p:/prabhu/projects/ai_ts_fullstack_mastery/docs/09_emergent_ai_roles_multimodal_governance.md)** | **Emergent AI-Era Roles (Roles #21 - #25)** | Multimodal RAG, Human-in-the-Loop DPO, AI Evals Regression, EU AI Act & Speech AI. |
+| **[E-BOOK](file:///p:/prabhu/projects/ai_ts_fullstack_mastery/Enterprise_AI_Architectures_Top_25_Roles_Masterclass.pdf)** | **Oxford Masterclass E-Book (All 25 Roles PDF)** | Publication-grade 59-page E-Book with childhood analogies, SVGs, formulas & cheats. |
 
 ---
 
