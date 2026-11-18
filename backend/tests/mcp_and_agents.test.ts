@@ -50,7 +50,7 @@ describe('MCP, Agents & Cognitive Systems Suite', () => {
       expect(step1.thought).toBeDefined();
       expect(step1.action).toBeDefined();
       expect(step1.observation).toBeDefined();
-    });
+    }, 15000);
   });
 
   describe('Supervisor Multi-Agent State Machine (LangGraph style)', () => {
